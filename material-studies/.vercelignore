@@ -1,0 +1,7 @@
+# only the page itself is published: index.html, teaser.js and this config
+shots
+tools
+refs
+*.md
+.vercel
+.env*

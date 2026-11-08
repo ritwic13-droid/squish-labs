@@ -1,0 +1,5 @@
+material-studies/shots/
+material-studies/refs/
+.vercel
+.env*
+node_modules/
