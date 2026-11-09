@@ -144,7 +144,7 @@ function timeline() {
   for (let k = 0; k < 72; k++) { push('loading', { pd: k / 71, loopT, bud: 0, out: 0 }); loopT = (loopT + step) % 10; }               // 0 to 100% at the shown rate
   for (let k = 0; k < 120; k++) { push('ready + bud', { pd: 1, loopT, bud: sm(((k / 60) - 0.35) / 1.3), out: 0 }); loopT = (loopT + step) % 10; }
   for (let k = 0; k < 600; k++) { push('loop', { pd: 1, loopT, bud: 1, out: 0 }); loopT = (loopT + step) % 10; }                      // one whole 10 s loop
-  for (let k = 0; k <= 114; k++) { push('exit', { pd: 1, loopT, bud: 1, out: Math.min(1, k / 114) }); loopT = (loopT + step) % 10; }  // Start: fall, spill, plinth (1.9 s)
+  for (let k = 0; k <= 120; k++) { push('exit', { pd: 1, loopT, bud: 1, out: Math.min(1, k / 120) }); loopT = (loopT + step) % 10; }  // Start: into the key, the fall, the pool and its ripples into the plinth (2 s)
   const every = +(process.env.EVERY || 10);  // EVERY=n: a quicker spot check during fixes; the round's result is always EVERY=10
   const only = process.env.PHASE;  // PHASE='ready + bud': only that part of the timeline
   return F.filter((f, i) => (i % every === 0 || f.phase === 'exit' && i === F.length - 1) && (!only || f.phase === only));

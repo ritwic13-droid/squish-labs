@@ -25,6 +25,7 @@ if (new URLSearchParams(location.search).get('from') === 'portfolio' && !matchMe
   --panel-w:316px;
   /* the portfolio hand-off: the colours on screen at the moment of entry (?from=portfolio), for the portfolio's transition to end on.
      The fluid is the signal pink, shaded from deep to light; it settles over the ground colour */
+  --plinth:#2a1640;  /* the plinth top: deep purple jelly */
   --squish-entry-fluid:#ff5c9a; --squish-entry-fluid-deep:#801441; --squish-entry-fluid-light:#ffcbdf; --squish-entry-ground:#111315;
   color-scheme:dark;
 }
@@ -145,7 +146,7 @@ input[type=range]::-moz-range-thumb{width:4px;height:20px;border:0;border-radius
 .intro{position:fixed;inset:0;z-index:40;overflow:hidden;color:var(--ink);font-family:var(--f-mono)}
 .intro:focus{outline:none}
 .intro-bg{position:absolute;inset:0;background-color:var(--surface);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:16px 16px}
-.intro canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#intro-gl{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 .intro-bar{position:absolute;top:10px;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .intro-bar h1{margin:0;font-size:inherit}
 .intro-bar .brand{flex:none}
@@ -162,18 +163,23 @@ input[type=range]::-moz-range-thumb{width:4px;height:20px;border:0;border-radius
 .intro-frame::before{top:0} .intro-frame::after{bottom:0}
 .intro-frame .tl{left:0;top:-18px} .intro-frame .tr{right:0;top:-18px} .intro-frame .bl{left:0;bottom:-18px} .intro-frame .br{right:0;bottom:-18px;font-variant-numeric:tabular-nums}
 .intro-meta{position:absolute;left:var(--cx);top:var(--my);transform:translateX(-50%);text-align:center;white-space:nowrap}
-.intro-count{font:600 44px/44px var(--f-display);letter-spacing:.04em;font-variant-numeric:tabular-nums;transition:opacity 300ms var(--ease-exact)}
+.intro-count{position:relative;font:600 44px/44px var(--f-display);letter-spacing:.04em;font-variant-numeric:tabular-nums;transition:opacity 300ms var(--ease-exact)}
+.intro-num{position:absolute;left:50%;top:0;width:360px;height:76px;transform:translateX(-50%);pointer-events:none}
+.intro.wnum .intro-count,.intro.wnum .intro-count .z,.intro.wnum .intro-status{color:transparent}  /* the drawn counter shows; the text stays for assistive tech */
 .intro-count .z{color:var(--line)}
 .intro-status{margin:18px 0 0;font:500 11px/1.4 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);transition:transform 300ms var(--ease-exact)}
 .intro.ready .intro-count{opacity:0}
 .intro.ready .intro-status{opacity:0}
 /* Start: a filled signal key, square like every control; hover darkens the border, a press inverts instantly */
-.intro-start{position:absolute;left:var(--cx);top:var(--by);transform:translate(-50%,-50%);height:56px;min-width:224px;padding:0 32px;font:600 14px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;background:var(--signal);color:var(--on-signal);border:1px solid var(--signal);border-radius:999px;cursor:pointer;visibility:hidden;opacity:0;transition:opacity var(--dur-step) var(--ease-exact)}
+.intro-start{position:absolute;left:var(--cx);top:var(--by);transform:translate(-50%,-50%);height:56px;min-width:224px;padding:0 32px;font:600 14px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;background:none;color:var(--on-signal);border:0;border-radius:999px;cursor:pointer;visibility:hidden;opacity:0;transition:opacity var(--dur-step) var(--ease-exact)}
 .intro-start.in{visibility:visible;opacity:1}
-.intro-start:hover{border-color:var(--ink)}
-.intro-start:active{background:var(--ink);border-color:var(--ink);color:var(--surface);transition-duration:var(--dur-tick)}
+/* the key's body is the blob's jelly, drawn by the landing's shader (it swells on hover and squashes when pressed); this is its label */
 .intro-start:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.intro.out .intro-bar,.intro.out .intro-meta,.intro.out .intro-frame,.intro.out .intro-x,.intro.out .intro-y{opacity:0;transition:opacity 140ms var(--ease-exact)}
+.intro.out .intro-meta,.intro.out .intro-x,.intro.out .intro-y{opacity:0;transition:opacity 140ms var(--ease-exact)}
+/* the frame stays: after the landing it grows into the stage's border; its labels go, its corner nodes travel with it */
+.intro-frame.grow{transition:left 1000ms cubic-bezier(.65,0,.35,1),top 1000ms cubic-bezier(.65,0,.35,1),width 1000ms cubic-bezier(.65,0,.35,1),height 1000ms cubic-bezier(.65,0,.35,1)}
+.intro-frame.grow span{opacity:0;transition:opacity 300ms} .intro-frame.grow::before,.intro-frame.grow::after{opacity:0;transition:opacity 300ms}
+.intro-reveal .intro-bar{opacity:0;transition:opacity 300ms}
 .intro-reveal .app .bar{transition-delay:140ms}
 .intro.fade{opacity:0;transition:opacity 320ms linear}
 .intro.audit .intro-bar,.intro.audit .intro-meta,.intro.audit .intro-frame,.intro.audit .intro-x,.intro.audit .intro-y{display:none}
@@ -184,11 +190,10 @@ input[type=range]::-moz-range-thumb{width:4px;height:20px;border:0;border-radius
    settling into the blob); the landing's labels come in as it settles */
 html.entry,html.entry body{background:var(--squish-entry-fluid)}
 html.entry .intro .intro-bg{background:var(--squish-entry-fluid)} html.entry .intro.settled .intro-bg{background-color:var(--surface);transition:background-color 300ms}
-html.entry .intro canvas{opacity:0;transition:opacity 400ms ease-out} html.entry .intro.drawn canvas{opacity:1}  /* the drawn fluid fades in over the painted one */
+html.entry #intro-gl{opacity:0;transition:opacity 400ms ease-out} html.entry .intro.drawn #intro-gl{opacity:1}  /* the drawn fluid fades in over the painted one */
 html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.intro-y){opacity:var(--chrome,0)}
-.intro-on .app .panel{transform:translateX(40px)}
-.intro-reveal .app .bar,.intro-reveal .app .caption,.intro-reveal .app .panel{opacity:1;transform:none;transition:opacity 520ms cubic-bezier(.4,0,.2,1),transform 600ms cubic-bezier(.4,0,.2,1)}
-.intro-reveal .app .caption{transition-delay:60ms}
+.intro-on .app .panel{transform:translateY(-110%)} .intro-on .app .caption{transform:translateX(-110%)}  /* they slide in as the frame grows */
+.intro-reveal .app .bar,.intro-reveal .app .caption,.intro-reveal .app .panel{opacity:1;transform:none;transition:opacity 500ms cubic-bezier(.4,0,.2,1),transform 1000ms cubic-bezier(.65,0,.35,1)}
 @media (prefers-reduced-motion:reduce){.intro-start,.intro-count,.intro-status{transition:none}}
 </style>
 
@@ -231,7 +236,7 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
   <canvas id="intro-gl" aria-hidden="true"></canvas>
   <div class="intro-bar"><h1 id="intro-title"></h1><p class="intro-tag" id="intro-tag">Loading</p></div>
   <div class="intro-meta">
-    <div class="intro-count" id="intro-count" role="progressbar" aria-label="Loading the lab" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="z">00</span>0</div>
+    <div class="intro-count" id="intro-count" role="progressbar" aria-label="Loading the lab" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="z" id="intro-z">00</span><span id="intro-d">0</span><canvas class="intro-num" id="intro-num" aria-hidden="true"></canvas></div>
     <p class="intro-status" id="intro-status">Fetching three.js</p>
   </div>
   <button class="intro-start" id="start" type="button">Start</button>
@@ -248,7 +253,7 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
   app.inert = true; html.classList.add('intro-on', 'lab-enter'); root.focus({ preventScroll: true });
   const clamp = x => Math.min(1, Math.max(0, x)), smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
   const abs = () => performance.timeOrigin + performance.now();  // one clock for this page and the renderer's worker
-  const BUD_MS = 350 + 1300, OUT_MS = reduce ? 320 : 1900;
+  const BUD_MS = 350 + 1300, OUT_MS = reduce ? 320 : 2000, END_MS = reduce ? 320 : 3100;
 
   // real progress: the first 55% is the three.js files arriving (each finished download counts), the rest are the lab's own steps,
   // reported by the main script (renderer, toy built, shaders compiled, first frame drawn)
@@ -262,7 +267,7 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
 
   const FS = `#version 300 es
   precision highp float;
-  uniform vec2 uC; uniform float uU, uT, uP, uBud, uOut, uFade, uMask, uEntry; uniform vec4 uBtn, uPl; uniform vec3 uPink, uTo;
+  uniform vec2 uC, uMouse; uniform float uU, uT, uP, uBud, uOut, uFade, uMask, uEntry, uIn, uHov, uPress; uniform vec4 uBtn, uPl; uniform vec3 uPink, uTo;
   out vec4 o;
   #define TAU 6.2831853
   const float LR[5] = float[5](0.62, 0.44, 0.46, 0.42, 0.40);
@@ -281,11 +286,16 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
   float wob(vec3 p, float w) { return sin(3.0 * p.x + w) * sin(2.6 * p.y - 2.0 * w + 1.3) * sin(2.2 * p.z + w + 0.4) * 0.07 + sin(4.6 * p.y + 3.0 * w + 2.0 * p.x) * 0.018; }
   // an ellipsoid's distance to first order (exact on its surface, so its anti-aliased edge stays one pixel wide however flat it is)
   float sdEll(vec3 p, vec3 r) { float k0 = length(p / r), k1 = length(p / (r * r)); return k0 * (k0 - 1.0) / max(k1, 1e-5); }
+  float sdCap(vec3 p, vec3 a, vec3 b, float r) { vec3 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0); return length(pa - ba * h) - r; }
   float map(vec3 p) {
     float w = TAU * uT / 10.0;
-    // after Start (uOut over 1.9 s): the body falls into the key, accelerating and shrinking to a drop's size (0 to 0.3) ...
-    float fa = smoothstep(0.0, 0.3, uOut), fl = clamp(uOut / 0.3, 0.0, 1.0), bs = mix(1.0, 0.3, fa);
-    vec3 bc = vec3(uBtn.xy * fl * fl, 0.0), q = (p - bc) / bs;  // a true fall, still speeding up when it hits the key
+    // after Start (uOut over 2 s): A (0 to 0.24) the body flows down its stem into the key and the two become one drop; B (0.24 to 0.42)
+    // that drop falls, speeding up, onto where the plinth's centre will be; C (0.42 to 0.8) it lands, spreads into a pool and ripples out
+    // until the pool is the plinth top
+    float a = smoothstep(0.0, 0.24, uOut), ea = a * a * (3.0 - 2.0 * a), fb = clamp((uOut - 0.24) / 0.18, 0.0, 1.0);
+    vec2 kc = uBtn.xy + (uPl.xy - uBtn.xy) * fb * fb;  // the key's centre: in place until the drop falls, then falling with it
+    float bs = mix(1.0, 0.3, ea);
+    vec3 bc = vec3(uBtn.xy * ea + (kc - uBtn.xy), 0.0), q = (p - bc) / bs;
     // loading: one seed swells into the body while its lobes bulge out one after another and swirl into place. It is one connected
     // shape all along (the finished blob scaled down, its lobes nearer the centre), so no two parts ever meet: a meeting always
     // passes through a sharp neck for an instant
@@ -297,37 +307,44 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
       vec3 c = lobe(i, w) * e; c.xy = rot((1.0 - e) * 2.4) * c.xy;
       d = smin(d, length(q - c * sz) - LR[i] * sz * mix(0.6, 1.0, e), k);
     }
-    d += wob(q / sz, w) * sz * mix(0.3, 1.0, smoothstep(0.7, 1.0, uP));
-    // the bud: the body reaches down toward the Start key with a bulge that stays part of it (in the body's own space, growing from
-    // nothing deep inside), while a drop is born just below it, swells, falls into the key's place and stretches into it. The drop
-    // never touches the body while it buds: shapes that meet or part pass through a sharp neck for an instant, while a newborn drop is
-    // a perfect small circle
-    float live = smoothstep(0.8, 1.0, uP) * (1.0 - smoothstep(0.0, 0.15, uOut)), reach = sin(3.14159 * smoothstep(0.0, 0.7, uBud)) * live;
-    if (live > 0.0) d = smin(d, length(q - vec3(0.0, -0.45 - 0.3 * reach, 0.0)) - 0.22 * live, 0.42);
-    d *= bs;
-    // after Start the key rounds back into a drop (0.05 to 0.12) and that drop shrinks away into its centre (0.11 to 0.2) while the body is
-    // still well above it; the body lands in its place. The two never touch, so there is no instant of a sharp neck between them
-    float kl = 1.0 - smoothstep(0.05, 0.12, uOut), kr = 1.0 - smoothstep(0.11, 0.2, uOut), rs = 0.16 * smoothstep(0.25, 0.45, uBud) * smoothstep(0.8, 1.0, uP) * kr;
-    if (rs > 0.0005) {
-      float f = smoothstep(0.6, 1.0, uBud), mv = smoothstep(0.35, 0.85, uBud); mv = mv * mv * (3.0 - 2.0 * mv);
-      // the drop stretches into the key: a capsule (a bar with fully round ends) whose length grows from zero
-      vec3 pc = p - mix(vec3(0.0, -1.27, 0.0), vec3(uBtn.xy, 0.0), mv); float L = (uBtn.z - uBtn.w) * f * kl, rr = mix(rs, uBtn.w * kr, f);
-      float key = length(pc - vec3(clamp(pc.x, -L, L), 0.0, 0.0)) - rr;
-      // on the way the drop is an ellipse stretching out (no straight run on a liquid drop); the pill's straight sides come only at
-      // the very end, as the HTML key fades in over it
-      float ell = sdEll(pc, vec3(mix(rs, uBtn.z * kl + uBtn.w * kr * (1.0 - kl), f), rr, rr));
-      key = mix(ell, key, mix(0.55, 1.0, smoothstep(0.85, 1.0, f)) * kl);  // half pill all along: a long thin ellipse alone has tight ends
-      d = min(d, key);
+    // the cursor: inside the frame a lobe reaches out toward it (it grows out of the middle, so the body stays one shape), and where it
+    // hovers over the body the surface swells a little
+    vec2 mq = (uMouse - bc.xy) / bs;
+    if (uIn > 0.001) {
+      float ml = length(mq); vec2 dir = mq / max(ml, 1e-3);
+      d = smin(d, length(q - vec3(dir * min(ml, 1.2) * 0.5 * uIn, 0.0)) - 0.42 * uIn, k);
+      d -= 0.06 * uIn * exp(-dot(q.xy - mq, q.xy - mq) / 0.05) * smoothstep(-0.2, 0.3, q.z);
     }
-    // ... the drop gives way to a sphere of its own size in its place (0.42 to 0.55), which spills: it spreads into the plinth top as the
-    // camera sees it (uPl: centre and radii), overshooting a little and settling (0.55 to 0.85)
-    float sp0 = smoothstep(0.42, 0.55, uOut);
+    d += wob(q / sz, w) * sz * mix(0.3, 1.0, smoothstep(0.7, 1.0, uP));
+    d *= bs;
+    // the key hangs from the body on a thin liquid stem: the bud is the body's underside drawn down into a drip that thins to a thread,
+    // its tip swelling into the pill. All one shape, so after Start the body can flow down the stem into the key and become one with it.
+    // The key is the body's own jelly: the same shading, the same slow wobble, swelling toward the cursor and on hover, squashed when pressed
+    float live = smoothstep(0.8, 1.0, uP);
+    if (live > 0.0) {
+      float sg = smoothstep(0.05, 0.55, uBud), f = smoothstep(0.45, 1.0, uBud);
+      vec3 an = bc + vec3(0.0, -0.4 * bs, 0.0), tip = mix(an, vec3(kc, 0.0), sg);
+      float rS = mix(0.2, 0.034, smoothstep(0.25, 0.75, uBud)) * live;
+      d = smin(d, sdCap(p, an, tip, rS), 0.28);  // a wide blend: the stem flares into the body like a drip (a narrow one leaves a tight inner corner)
+      float hv = uHov * (1.0 - ea), pr = uPress * (1.0 - ea);
+      float L = (uBtn.z - uBtn.w) * f * (1.0 - smoothstep(0.0, 0.45, ea)) * (1.0 + 0.04 * hv + 0.05 * pr), rr = mix(rS, uBtn.w, f) * (1.0 + 0.12 * hv) * (1.0 - 0.1 * pr);
+      vec3 pk = p - tip; pk.y /= 1.0 - 0.12 * pr;  // pressed: it squashes down a little
+      float key = (length(pk - vec3(clamp(pk.x, -L, L), 0.0, 0.0)) - rr) + wob(pk * 3.0, w) * 0.018 * f;
+      vec2 mk = uMouse - tip.xy; key -= 0.03 * f * (1.0 - ea) * exp(-dot(mk, mk) / 0.08) * exp(-dot(p.xy - uMouse, p.xy - uMouse) / 0.03);  // leans toward a nearby cursor
+      d = smin(d, key, 0.16 + 0.26 * ea);  // wider as the body flows into the key, so they merge with a soft fillet
+    }
+    // the pool: the drop gives way to a sphere of its own size in its place (0.4 to 0.5), which spreads into the plinth top as the camera
+    // sees it (uPl: centre and radii), overshooting a little and settling (0.48 to 0.8). Rings run out across it as it spreads, strongest
+    // mid-way, gone as it settles; the edge carries a softer wave
+    float sp0 = smoothstep(0.4, 0.5, uOut);
     if (sp0 > 0.0) {
-      float x = smoothstep(0.55, 0.85, uOut) - 1.0, e = 1.0 + 2.2 * x * x * x + 1.2 * x * x;  // ease out with a small overshoot
-      vec3 cen = mix(vec3(uBtn.xy, 0.0), vec3(uPl.xy, 0.0), e), r = mix(vec3(0.26), vec3(uPl.z, uPl.w, 0.1), e);
-      vec3 pe = p - cen; float an = atan(pe.y / max(r.y, 1e-3), pe.x / max(r.x, 1e-3)), sp = smoothstep(0.55, 0.85, uOut);
-      r.xy *= 1.0 + (0.035 * sin(5.0 * an + 9.0 * sp) + 0.02 * sin(3.0 * an - 6.0 * sp + 1.3)) * sin(3.14159 * sp);  // the wave, gone when it settles
-      d = mix(d, sdEll(pe, max(r, vec3(0.01))), sp0);
+      float sp = smoothstep(0.48, 0.8, uOut), x = sp - 1.0, e = 1.0 + 2.2 * x * x * x + 1.2 * x * x;
+      vec3 r = mix(vec3(0.27), vec3(uPl.z, uPl.w, 0.07), e), pe = p - vec3(uPl.xy, 0.0);
+      float an = atan(pe.y / max(r.y, 1e-3), pe.x / max(r.x, 1e-3)), wave = sin(3.14159 * sp);
+      r.xy *= 1.0 + (0.03 * sin(5.0 * an + 9.0 * sp) + 0.018 * sin(3.0 * an - 6.0 * sp + 1.3)) * wave;
+      float pool = sdEll(pe, max(r, vec3(0.01))), rho = length(pe.xy / max(r.xy, vec2(1e-3)));
+      pool -= 0.01 * sin(24.0 * rho - 38.0 * sp) * wave * (1.0 - smoothstep(0.75, 1.0, rho));  // the ripples, as height
+      d = mix(d, pool, sp0);
     }
     return d;
   }
@@ -338,7 +355,7 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
     float t = 1.5, dmin = 1e5, tm = 6.0; bool hit = false;
     float pf = 1.0 / (6.0 * uU);  // one pixel's footprint per unit of ray length
     for (int i = 0; i < 200; i++) { float d = map(ro + rd * t), w = 0.5 * pf * t; if (d < dmin) { dmin = d; tm = t; } if (d < -w) { hit = true; break; } t += max(d * 0.8, 0.25 * pf * t); if (t > 10.0) break; }
-    float dh = (h12(fc) - 0.5) / 255.0, g = exp(-max(dmin, 0.0) * 7.5) * 0.3 * (1.0 - smoothstep(0.0, 0.3, uOut));
+    float dh = (h12(fc) - 0.5) / 255.0, g = exp(-max(dmin, 0.0) * 7.5) * 0.3 * (1.0 - smoothstep(0.3, 0.6, uOut));
     float cov = hit ? 1.0 : clamp(0.5 - dmin / (pf * tm), 0.0, 1.0);  // the pixel's area inside the silhouette (box filter): 0.5 on it, linear over 1 px  // coverage over about one pixel's footprint
     if (uMask > 0.5) return vec4(vec3(cov), 1.0);  // the curve audit's view: each pixel's coverage of the silhouette, nothing else
     if (cov <= 0.0) return vec4(uPink * g + dh * g, g);  // only the glow around it
@@ -348,7 +365,7 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
     // the lab's studio: the overhead softbox as a soft, faintly tinted lit panel where the reflection meets it
     float sb = 0.0; if (R.y > 0.05) { vec2 h = (R.xz / R.y * 3.0 - vec2(0.4, 0.8)) / vec2(1.5, 0.9); sb = (1.0 - smoothstep(0.2, 1.3, abs(h.x))) * (1.0 - smoothstep(0.1, 1.3, abs(h.y))); }
     c += pale * fr * 0.45 + mix(pale, vec3(1.0), 0.4) * sb * 0.42 + uPink * 0.16 * (1.0 - ndv);  // light gathered through the thin edges
-    float m = smoothstep(0.5, 0.8, uOut); c = mix(c, uTo * (0.75 + 0.5 * wrap) + vec3(1.0) * sb * 0.15, m);  // spilling, it takes the agar's colour
+    float m = smoothstep(0.55, 0.82, uOut); c = mix(c, uTo * (0.75 + 0.5 * wrap) + vec3(1.0) * sb * 0.15, m);  // spreading, it darkens into the plinth's purple
     return vec4((c + dh) * cov + uPink * g * (1.0 - cov), cov + g * (1.0 - cov));
   }
   void main() {
@@ -366,7 +383,7 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
     float th = h(i + 9.1) * 0.8, k = clamp((uP - th) / 0.14, 0.0, 1.0), e = k * k * (3.0 - 2.0 * k);
     vec2 pos = mix(start, target, e) + vec2(-dir.y, dir.x) * sin(3.14159 * e) * 0.18 * (h(i + 2.2) - 0.5);
     float w = 6.2831853 * uT / 10.0; pos += vec2(sin(w * (1.0 + floor(h(i + 4.4) * 3.0)) + i), cos(w * (1.0 + floor(h(i + 6.6) * 3.0)) + i * 1.3)) * 6.0 * uDpr * (1.0 - e);
-    vA = (k <= 0.0 ? 0.22 : 0.85) * (1.0 - smoothstep(0.0, 0.06, uP - th - 0.14)); vE = e;
+    vA = 0.85 * smoothstep(0.0, 0.12, k) * (1.0 - smoothstep(0.0, 0.06, uP - th - 0.14)); vE = e;  // invisible until it sets off: no static field of dots
     gl_Position = vec4(pos / uRes * 2.0 - 1.0, 0.0, 1.0); gl_PointSize = vS = 6.0 * uDpr;
   }`;
   const PF = `#version 300 es
@@ -391,22 +408,25 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
     let ub = null, up = null; gl.bindVertexArray(gl.createVertexArray());
     const clamp = x => Math.min(1, Math.max(0, x)), smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
     const now = () => performance.timeOrigin + performance.now(), raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : f => setTimeout(f, 16);
-    const st = { pd: 0, readyAt: 0, startAt: 0, W: 1, H: 1, dpr: 1, U: 1, cx: 0, cy: 0, btn: [0, -2, 0.3, 0.08], pl: [0, -1, 2.5, 0.6] };
-    let Pd = 0, loopT = 0, last = 0, dirty = true, stopped = false, drawnId = 0, frames = 0; const gaps = [];  // frames slower than 25 fps, for the tests
+    const st = { mouse: [0, 0], inF: 0, hov: 0, press: 0, pd: 0, real: 0, readyAt: 0, startAt: 0, W: 1, H: 1, dpr: 1, U: 1, cx: 0, cy: 0, btn: [0, -2, 0.3, 0.08], pl: [0, -1, 2.5, 0.6] };
+    let Pd = 0, loopT = 0, last = 0, dirty = true, stopped = false, drawnId = 0, frames = 0, mx = 0, my = 0, inE = 0, hovE = 0, prE = 0; const gaps = [];  // frames slower than 25 fps, for the tests
     function frame() {
-      if (stopped) return; raf(frame);
+      if (stopped) return; raf(frame); numTick();
       const tn = now(), dt = last ? Math.min(0.05, (tn - last) / 1000) : 0; if (last && tn - last > 40) gaps.push(Math.round(tn - last)); last = tn; frames++;
-      if (Pd !== st.pd) { Pd = reduce || st.pd - Pd < 0 ? st.pd : Math.min(st.pd, Pd + Math.max(dt * 0.9, (st.pd - Pd) * Math.min(1, dt * 14))); dirty = true; }  // follows the counter's progress, smoothed between its frames
+      if (Pd < st.real) { Pd = reduce ? st.real : Math.min(st.real, Pd + dt * 0.9); dirty = true; }  // toward the real progress at 90% a second at most, never ahead of it  // follows the counter's progress, smoothed between its frames
       if (!reduce) loopT = (loopT + dt) % 10;
+      // the cursor follows quickly, its pull and the key's hover and press ease in and out (never a jump)
+      const fk = 1 - Math.exp(-dt * 12), ek = 1 - Math.exp(-dt * 5);
+      mx += (st.mouse[0] - mx) * fk; my += (st.mouse[1] - my) * fk; inE += (st.inF - inE) * ek; hovE += (st.hov - hovE) * (1 - Math.exp(-dt * 9)); prE += (st.press - prE) * (1 - Math.exp(-dt * 14));
       if (st.seek) { Pd = st.seek.pd; loopT = st.seek.loopT; }  // the curve audit's frozen frame
-      if (!ub && ok(pb)) { ub = loc(pb, ['uC', 'uU', 'uT', 'uP', 'uBud', 'uOut', 'uFade', 'uMask', 'uEntry', 'uBtn', 'uPl', 'uPink', 'uTo']); dirty = true; }
+      if (!ub && ok(pb)) { ub = loc(pb, ['uC', 'uU', 'uT', 'uP', 'uBud', 'uOut', 'uFade', 'uMask', 'uEntry', 'uMouse', 'uIn', 'uHov', 'uPress', 'uBtn', 'uPl', 'uPink', 'uTo']); dirty = true; }
       if (!up && ok(pp)) up = loc(pp, ['uRes', 'uC', 'uU', 'uP', 'uDpr', 'uT', 'uInk', 'uPink']);
       if (reduce && !dirty) return;  // the calm version is a still: draw only when something changed
       dirty = false;
       let bud = 0, out = 0;
       if (st.seek) { bud = st.seek.bud; out = st.seek.out; }
       else if (st.readyAt && !reduce) { const b = clamp((tn - st.readyAt - 350) / 1300); bud = b * b * (3 - 2 * b); }
-      if (st.startAt) { out = clamp((tn - st.startAt) / 1900); bud = reduce ? 0 : 1; }
+      if (st.startAt) { out = clamp((tn - st.startAt) / 2000); bud = reduce ? 0 : 1; }
       const ucx = st.cx * st.dpr, ucy = (st.H - st.cy) * st.dpr, uu = st.U * st.dpr;
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       if (up && !reduce && Pd < 1 && !st.entry && !(st.seek && st.seek.noPoints)) {
@@ -418,7 +438,8 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
       if (ub) {
         gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.useProgram(pb);
         gl.uniform2f(ub.uC, ucx, ucy); gl.uniform1f(ub.uU, uu); gl.uniform1f(ub.uT, loopT); gl.uniform1f(ub.uP, reduce ? 1 : Pd);
-        gl.uniform1f(ub.uBud, bud); gl.uniform1f(ub.uOut, reduce ? 0 : out); gl.uniform1f(ub.uMask, st.seek && st.seek.mask ? 1 : 0); gl.uniform1f(ub.uEntry, st.entry || 0);
+        gl.uniform1f(ub.uBud, bud); gl.uniform1f(ub.uOut, reduce ? 0 : out); gl.uniform1f(ub.uMask, st.seek && st.seek.mask ? 1 : 0);
+        const cur = !st.seek && !reduce; gl.uniform2f(ub.uMouse, mx, my); gl.uniform1f(ub.uIn, cur ? inE : 0); gl.uniform1f(ub.uHov, cur ? hovE : 0); gl.uniform1f(ub.uPress, cur ? prE : 0); gl.uniform1f(ub.uEntry, st.entry || 0);
         gl.uniform1f(ub.uFade, 1 - smooth(0.84, 1, out));
         gl.uniform4fv(ub.uBtn, st.btn); gl.uniform4fv(ub.uPl, st.pl); gl.uniform3fv(ub.uPink, C.pink); gl.uniform3fv(ub.uTo, st.to || C.pink);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -426,6 +447,24 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
       if (ub && !st.first) { st.first = 1; if (typeof WorkerGlobalScope !== 'undefined') postMessage({ first: true }); else if (C.onFirst) C.onFirst(); }
       if (st.seek && ub && st.seekId !== drawnId) { drawnId = st.seekId; if (typeof WorkerGlobalScope !== 'undefined') postMessage({ drawn: drawnId }); }
     }
+    // the counter, drawn here so it keeps counting while the page is busy: zero-padded, leading zeros dim, the page's own font
+    const nc = C.num && C.num.getContext('2d'); let nReady = false, nShown = -1, nSteps = 0;
+    (async () => { try { const css = await (await fetch(C.fontCss)).text(), faces = css.split('@font-face').filter(b => b.includes('Martian Mono')), f = faces.find(b => /U\+0000-00FF/.test(b)) || faces.pop(), u = f.match(/url\((https:[^)]+)\)/)[1];
+      const ff = new FontFace('Martian Mono', `url(${u})`, { weight: '100 900', stretch: '75% 112.5%' }); await ff.load(); (self.fonts || document.fonts).add(ff); } catch (e) {} nReady = true; nShown = -1; })();
+    function drawNum(p) {
+      const w = 360, h = 76, s = String(p).padStart(3, '0'), z = s.match(/^0*(?=\d)/)[0], steps = st.steps || [], step = steps.filter(x => x[0] <= p / 100 + 1e-6).pop();
+      if (C.num.width !== Math.round(w * st.dpr)) { C.num.width = Math.round(w * st.dpr); C.num.height = Math.round(h * st.dpr); }
+      nc.setTransform(st.dpr, 0, 0, st.dpr, 0, 0); nc.clearRect(0, 0, w, h); nc.font = '600 44px "Martian Mono", ui-monospace, monospace'; nc.textBaseline = 'middle';
+      const cw = [...s].map(ch => nc.measureText(ch).width), sp = 1.76; let x = (w - cw.reduce((a, b) => a + b, 0) - sp * 2) / 2;
+      [...s].forEach((ch, i) => { nc.fillStyle = i < z.length ? C.lineHex : C.inkHex; nc.fillText(ch, x, 23); x += cw[i] + sp; });
+      // the status line: 11 px mono, upper case, wide tracking, muted (as the page's .intro-status)
+      const lab = (p < 55 || !step ? 'Fetching three.js' : step[1]).toUpperCase(); nc.font = '500 11px "Martian Mono", ui-monospace, monospace'; nc.fillStyle = C.mutedHex;
+      const lw = [...lab].map(ch => nc.measureText(ch).width), ls = 1.54; let lx = (w - lw.reduce((a, b) => a + b, 0) - ls * (lab.length - 1)) / 2;
+      [...lab].forEach((ch, i) => { nc.fillText(ch, lx, 66); lx += lw[i] + ls; });
+      if (nShown < 0 && typeof WorkerGlobalScope !== 'undefined') postMessage({ num: true }); else if (nShown < 0 && C.onNum) C.onNum();
+      nShown = p;
+    }
+    const numTick = () => { if (nc && nReady && !st.seek) { const p = Math.floor((reduce ? st.real : Pd) * 100); if (p !== nShown || st.stepsN !== nSteps) { nSteps = st.stepsN; drawNum(p); } } };
     raf(frame);
     return {
       set(o) { Object.assign(st, o); if (o.W) { cv.width = Math.round(st.W * st.dpr); cv.height = Math.round(st.H * st.dpr); gl.viewport(0, 0, cv.width, cv.height); } dirty = true; },
@@ -434,22 +473,24 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
     };
   }
   const css = getComputedStyle(html), rgb = v => { const h = css.getPropertyValue(v).trim().replace('#', ''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255); };
-  const COLORS = { pink: rgb('--signal'), agar: rgb('--agar'), ink: rgb('--ink') }, SH = { VS, FS, PS, PF };
+  const COLORS = { plinth: rgb('--plinth'), pink: rgb('--signal'), agar: rgb('--agar'), ink: rgb('--ink'), inkHex: css.getPropertyValue('--ink').trim(), mutedHex: css.getPropertyValue('--muted').trim(), lineHex: css.getPropertyValue('--line').trim(),
+    fontCss: (document.querySelector('link[href*="fonts.googleapis.com/css2"]') || {}).href || '' }, SH = { VS, FS, PS, PF };
+  const numCv = $i('intro-num');
   let R = null, worker = null;
   try {
     if (!('transferControlToOffscreen' in cv) || typeof Worker !== 'function') throw 0;
-    const off = cv.transferControlToOffscreen();
+    const off = cv.transferControlToOffscreen(), offNum = numCv.transferControlToOffscreen();
     worker = new Worker(URL.createObjectURL(new Blob([`const make = ${introRenderer.toString()}; let R = null;
       onmessage = e => { const d = e.data; if (d.cv) { R = make(d.cv, d.S, d.reduce, d.C); if (!R) postMessage('nogl'); } else if (R) { if (d.stop) { R.stop(); close(); } else if (d.gaps) postMessage({ gaps: R.gaps(), pd: R.pd() }); else R.set(d); } };`], { type: 'text/javascript' })));
-    worker.postMessage({ cv: off, S: SH, reduce, C: COLORS }, [off]);
-    worker.onmessage = e => { if (e.data === 'nogl') { R = null; cv.remove(); root.classList.add('drawn'); showIfReady(); } else if (e.data.gaps) I.gapsOut(e.data); else if (e.data.drawn && I.seekDone) I.seekDone(e.data.drawn); else if (e.data.first) root.classList.add('drawn'); };
+    worker.postMessage({ cv: off, S: SH, reduce, C: { ...COLORS, num: offNum } }, [off, offNum]);
+    worker.onmessage = e => { if (e.data === 'nogl') { R = null; cv.remove(); root.classList.add('drawn'); showIfReady(); } else if (e.data.gaps) I.gapsOut(e.data); else if (e.data.drawn && I.seekDone) I.seekDone(e.data.drawn); else if (e.data.first) root.classList.add('drawn'); else if (e.data.num) root.classList.add('wnum'); };
     if (qs.has('audit')) {  // the curve audit: only the drawn shapes on a flat ground, and a frozen frame on request
       root.classList.add('audit'); let n = 0;
       I.seek = st => new Promise(r => { I.seekDone = r; worker.postMessage({ seek: st, seekId: ++n }); });
     }
     I.gaps = () => new Promise(r => { I.gapsOut = r; worker.postMessage({ gaps: true }); });
     R = { set: o => worker.postMessage(o), stop: () => worker.postMessage({ stop: true }) };
-  } catch (e) { worker = null; R = introRenderer(cv, SH, reduce, { ...COLORS, onFirst: () => root.classList.add('drawn') }); if (!R) cv.remove(); }
+  } catch (e) { worker = null; R = introRenderer(cv, SH, reduce, { ...COLORS, num: numCv, onNum: () => root.classList.add('wnum'), onFirst: () => root.classList.add('drawn') }); if (!R) cv.remove(); }
   if (!R) root.classList.add('drawn');  // no worker canvas: draw here; no WebGL2: counter and Start only
 
   let W, H, U, cx, cy;
@@ -462,6 +503,12 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
     if (R) R.set({ entry, W, H, dpr, U, cx, cy, btn: [...world(r.left + r.width / 2, r.top + r.height / 2), (r.width / 2 - 3) / U, (r.height / 2 - 3) / U] });  // the shader's key sits 3 px inside the HTML key, which always covers it
   }
   layout(); addEventListener('resize', layout);
+  // the cursor, in the landing's units, and whether it is inside the Fig. 00 frame (the blob reaches toward it there)
+  addEventListener('pointermove', e => { if (!R || I.started) return; const [x, y] = world(e.clientX, e.clientY); R.set({ mouse: [x, y], inF: Math.max(Math.abs(x), Math.abs(y)) < 1.32 ? 1 : 0 }); });
+  document.addEventListener('pointerleave', () => { if (R) R.set({ inF: 0 }); });
+  const hov = v => () => { if (R && !I.started) R.set({ hov: v }); };
+  btn.addEventListener('pointerenter', hov(1)); btn.addEventListener('pointerleave', () => { if (R) R.set({ hov: 0, press: 0 }); }); btn.addEventListener('focus', hov(1)); btn.addEventListener('blur', hov(0));
+  btn.addEventListener('pointerdown', () => { if (R) R.set({ press: 1 }); }); addEventListener('pointerup', () => { if (R) R.set({ press: 0 }); });
 
   let Pd = 0, sent = -1, last = performance.now(), readyAt = 0, startAt = 0, shown = false, raf = 0, pct = -1;
   function becomeReady() {
@@ -477,9 +524,11 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
   function start() {
     if (I.started || !I.ready) return;
     I.started = true; startAt = abs();
+    const br = btn.getBoundingClientRect();
+    I.land = { x: cx, y: br.top + br.height / 2 + H * 0.1 };  // where the drop lands and the plinth forms, under the key
     try { I.onStart && I.onStart(); } catch (e) {}
-    const p = I.plinth ? I.plinth() : null;  // where the plinth top will be on screen: the spill settles exactly there
-    if (R) R.set({ startAt, pl: p ? [...world(p.x, p.y), p.rx / U, p.ry / U] : [0, -1.4, 2.2, 0.7], to: COLORS.agar });
+    const p = I.plinth ? I.plinth() : null;  // the plinth top as the far camera sees it, centred on the landing point
+    if (R) R.set({ startAt, hov: 0, press: 0, inF: 0, pl: p ? [...world(p.x, p.y), p.rx / U, p.ry / U] : [...world(I.land.x, I.land.y), 0.8, 0.2], to: COLORS.plinth });
     I.t0 = reduce ? 0 : performance.now();  // the lab's entrance runs from here
     btn.classList.remove('in'); root.classList.add('out'); if (reduce || !R) root.classList.add('fade');
   }
@@ -489,6 +538,14 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
   const framed = window.parent !== window; let startAsked = false;
   addEventListener('message', e => { if (e.source !== window.parent || !framed) return; const t = typeof e.data === 'string' ? e.data : e.data && e.data.type;
     if (t === 'squish:start') { if (shown) start(); else startAsked = true; } });
+  // Fig. 00 grows into the lab's frame (the stage's border) as the right panel slides down from the top and the caption slides in from
+  // the left, all at once; the lab is live from here (the landing no longer takes the pointer)
+  let expanding = false;
+  function expand() {
+    expanding = true; app.inert = false; root.style.pointerEvents = 'none'; html.classList.add('intro-reveal');
+    const fr = root.querySelector('.intro-frame'), sr = document.getElementById('stage').getBoundingClientRect();
+    fr.classList.add('grow'); Object.assign(fr.style, { left: sr.left + 'px', top: sr.top + 'px', width: sr.width + 'px', height: sr.height + 'px' });
+  }
   function finish() {
     I.done = true; cancelAnimationFrame(raf); if (R) R.stop(); app.inert = false; html.classList.remove('intro-on', 'intro-reveal', 'entry'); root.remove();
     const t = document.querySelector('[id^="squish-toy-"][aria-pressed="true"]'); if (t) t.focus({ preventScroll: true });
@@ -497,19 +554,19 @@ html.entry .intro:not(.out) :is(.intro-bar,.intro-meta,.intro-frame,.intro-x,.in
     raf = requestAnimationFrame(tick);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (Pd < real) Pd = reduce ? real : Math.min(real, Pd + dt * 0.9);  // the shown progress: no faster than 90% a second, never ahead
-    if (Pd !== sent) { sent = Pd; if (R) R.set({ pd: Pd }); }
+    if (real !== sent) { sent = real; if (R) R.set({ real, steps: I.log.map(x => [x[1], x[2]]), stepsN: I.log.length }); }
     if (!I.ready && real >= 1 && Pd >= 1) becomeReady();
     showIfReady();
     if (startAt) {
-      const out = clamp((abs() - startAt) / OUT_MS);
-      bg.style.opacity = reduce ? 1 : 1 - smooth(0.6, 0.86, out); if (reduce || out > 0.55) html.classList.add('intro-reveal');
-      if (out >= 1) return finish();
+      const el = abs() - startAt, out = clamp(el / OUT_MS);
+      bg.style.opacity = reduce ? 1 : 1 - smooth(0.62, 0.86, out);
+      if ((reduce || out >= 1) && !expanding) expand();
+      if (el >= END_MS) return finish();
     }
     const p = Math.floor(Pd * 100);
     if (p !== pct) {
       pct = p; const s = String(p).padStart(3, '0'), z = s.match(/^0*(?=\d)/)[0];
-      count.innerHTML = `<span class="z">${z}</span>${s.slice(z.length)}`; count.setAttribute('aria-valuenow', p);
-      root.style.setProperty('--draw', reduce ? 1 : smooth(0, 0.35, Pd).toFixed(3));
+      $i('intro-z').textContent = z; $i('intro-d').textContent = s.slice(z.length); count.setAttribute('aria-valuenow', p);  // text only: the drawn counter's canvas lives in here too
       if (!I.ready) { const step = I.log.filter(x => x[1] <= Pd + 1e-6).pop(); status.textContent = Pd < 0.55 || !step ? 'Fetching three.js' : step[2]; }  // the step the shown number has reached
       if (reduce && R) cv.style.opacity = (0.3 + 0.7 * Pd).toFixed(3);
       root.style.setProperty('--chrome', smooth(0.45, 0.85, Pd).toFixed(3));  // the entry's labels come in as the fluid settles
@@ -1135,13 +1192,13 @@ function makeSquish() {
     bao:      { color: '#f6efe2', accent: '#e2463c', finish: 'powder', softness: 0.65, bounce: 0.4, wobble: 0.35, slow: 0.3, hold: 0.8, voice: 'auto' },
     mochi:    { color: '#9cc97a', accent: '#ffffff', finish: 'powder', softness: 0.6, bounce: 0.45, wobble: 0.55, slow: 0.0, hold: 0.75, voice: 'auto' },
     iced:     { color: '#d9a066', accent: '#ff8fb8', finish: 'powder', softness: 0.45, bounce: 0.5, wobble: 0.4, slow: 0.2, hold: 0.7, voice: 'auto' },
-    filled:   { color: '#e3a25c', accent: '#d81e3c', finish: 'powder', softness: 0.7, bounce: 0.4, wobble: 0.4, slow: 0.25, hold: 0.85, voice: 'auto' },
+    filled:   { color: '#e3a25c', accent: '#ff5c9a', finish: 'powder', softness: 0.7, bounce: 0.4, wobble: 0.4, slow: 0.25, hold: 0.85, voice: 'auto' },
     axolotl:  { color: '#ffb3c7', accent: '#ff4f7f', finish: 'gloss', softness: 0.55, bounce: 0.6, wobble: 0.6, slow: 0.0, hold: 0.7, voice: 'auto' },
     capybara: { color: '#a0714a', accent: '#ff9a1f', finish: 'powder', softness: 0.6, bounce: 0.45, wobble: 0.35, slow: 0.1, hold: 0.8, voice: 'auto' },
     beaver:   { color: '#f88874', accent: '#b8325e', bubble: '#ffd6e2', finish: 'powder', softness: 0.6, bounce: 0.5, wobble: 0.5, slow: 0.05, hold: 0.75, voice: 'auto' },
     crackball: { color: '#7a3416', accent: '#e4f0f4', finish: 'gloss', softness: 0.85, bounce: 0.25, wobble: 0.2, slow: 0.45, hold: 0.85, voice: 'auto' },
     grape:    { color: '#b57cff', accent: '#ffffff', finish: 'clear', softness: 0.65, bounce: 0.55, wobble: 0.7, slow: 0.0, hold: 0.75, voice: 'auto' },
-    slime:    { color: '#39ff14', accent: '#e9f6ff', finish: 'gloss', softness: 0.9, bounce: 0.1, wobble: 0.1, slow: 0.95, hold: 0.95, voice: 'auto' },
+    slime:    { color: '#ff5c9a', accent: '#e9f6ff', finish: 'gloss', softness: 0.9, bounce: 0.1, wobble: 0.1, slow: 0.95, hold: 0.95, voice: 'auto' },
     fluff:    { color: '#ff5fe6', accent: '#4b22c9', finish: 'powder', softness: 0.8, bounce: 0.45, wobble: 0.55, slow: 0.1, hold: 0.85, voice: 'auto' },
   };
   const VOICE_OF = { fluff: 'puff', bao: 'puff', mochi: 'puff', iced: 'puff', filled: 'ooze', axolotl: 'squeak', capybara: 'squeak', beaver: 'squeak', grape: 'squelch', crackball: 'squelch', slime: 'sticky' };
@@ -1288,8 +1345,9 @@ function makeSquish() {
     const bounce = new THREE.DirectionalLight(0xffd9b8, 0.35); bounce.position.set(0.5, -0.6, 3); scene.add(bounce);
     // the Specimen sample dish (brand-languages/specimen, "The 3D stage"): a turntable cast in agar, matte and cool, so the
     // toys' own colours read true against it; a thin graphite metal rim
-    const agar = { roughness: 0.62, clearcoat: 0.08, clearcoatRoughness: 0.3, envMapIntensity: 0.18, specularIntensity: 0.45 };
-    const side = rpdb(new THREE.MeshPhysicalMaterial({ color: '#1d322e', ...agar })), top = rpdb(new THREE.MeshPhysicalMaterial({ color: '#2c4a45', ...agar }));
+    // deep purple jelly: glossy, a clear coat over a softer body, the side a shade deeper than the top; its rim the signal pink
+    const agar = { roughness: 0.55, clearcoat: 0.12, clearcoatRoughness: 0.3, envMapIntensity: 0.12, specularIntensity: 0.18, sheen: 0.12, sheenRoughness: 0.6, sheenColor: col('#5a3a86') };
+    const side = rpdb(new THREE.MeshPhysicalMaterial({ color: '#170b24', ...agar })), top = rpdb(new THREE.MeshPhysicalMaterial({ color: '#2a1640', ...agar }));
     if (!foot) makeFoot(); top.onBeforeCompile = footPatch;
     side.onBeforeCompile = sh => {  // slime running down the side shades it with the same tinted shadow
       sh.uniforms.uShadowTint = foot.u.uShadowTint;
@@ -1297,7 +1355,7 @@ function makeSquish() {
     };
     const plinth = new THREE.Mesh(new THREE.CylinderGeometry(2.05, 2.15, 0.3, 96), [side, top, side]);
     plinth.position.y = -0.15; plinth.receiveShadow = plinth.castShadow = true; scene.add(plinth);
-    const lip = stageParts.lip = new THREE.Mesh(new THREE.TorusGeometry(2.05, 0.018, 12, 160), new THREE.MeshPhysicalMaterial({ color: '#6f777d', metalness: 0.85, roughness: 0.32 })); lip.rotation.x = Math.PI / 2; scene.add(lip); stageParts.plinth = plinth;
+    const lip = stageParts.lip = new THREE.Mesh(new THREE.TorusGeometry(2.05, 0.018, 12, 160), new THREE.MeshPhysicalMaterial({ color: '#ff5c9a', roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.1, emissive: '#ff5c9a', emissiveIntensity: 0.15 })); lip.rotation.x = Math.PI / 2; scene.add(lip); stageParts.plinth = plinth;
     root = new THREE.Group(); root.userData.noDense = true; scene.add(root);  // the toys pick their own segment counts (seg())
     dust = makeDust(scene, 3.2, 3);
     buildToy();
@@ -2838,9 +2896,9 @@ function makeSquish() {
     id: 'squish',
     // keeps its original look; only the sharper image and AO are new
     look: { env: { level: 0.8, panels: [{ pos: [0.6, 7, 1.2], size: [5.5, 3.4], i: 12 }, { pos: [-6, 3.2, -4.5], size: [0.8, 4.6], i: 10 }, { pos: [6, 2, 4], size: [2.8, 2.8], i: 2.4 }] }, tone: 'neutral', exposure: 0.95, saturation: 0.55, bloom: true, bloomStrength: 0.06, bloomRadius: 0.25, bloomThreshold: 7, dof: 4, ssr: 1.2, smaa: false /* 4x MSAA moving, temporal accumulation when still */, aoRadius: 0.2, aoSamples: 10, aoDenoise: { radius: 12, rings: 2, samples: 16 } },
-    kicker: 'Soft toys · spring-mesh soft body',
-    title: 'squish<em>.labs</em>', blurb: 'Squishy food, squishy animals and sensory balls on a turntable. Each is a spring mesh that dents and wobbles back, with its own sound and parts that ride along with the squish.',
-    hint: 'Press and hold to squish, drag while holding to knead. Slime stretches toward your pointer. Squeeze the cracking ball to break its chocolate shell, then knead it; Re-coat makes it whole again. Squeeze the bubble beaver to blow its bubble, and poke the bubble to dent it. Squeeze the jelly donut hard to make it ooze: the jelly is limited: it pools on the turntable, spills over the rim if you squeeze out enough, and Reset jelly fills the donut back up.',
+    kicker: 'ASMR for the terminally online · soft-body therapy',
+    title: 'squish<em>.labs</em>', blurb: 'Squishy toys for a species that automated everything except calming down. No plastic, no shipping, no drawer of sad plushies you will feel guilty about until 2087. Squeeze, poke, repeat. It will not fix anything, but neither did the last eleven apps.',
+    hint: 'Press and hold to squish; drag while holding to knead. Crack the chocolate ball, knead the rubble, then press Re-coat and pretend it never happened. Squeeze the bubble beaver until it blows a bubble, then poke it, the way adults handle feelings. Squeeze the jelly donut hard and the jam escapes, like your weekend; Reset jelly puts it back. The slime follows your pointer around. Clingy, but supportive.',
     P, view: { target: [0, 0.6, 0], th: 0.5, ph: 1.08, r: 8.6, minR: 4, maxR: 13 },
     controls: [
       { type: 'seg', key: 'toy', label: 'Toy', cols: 3, options: [['fluff', 'Fluffy monster'], ['bao', 'Bao bun'], ['mochi', 'Mochi ice cream'], ['iced', 'Iced donut'], ['filled', 'Jelly donut'], ['axolotl', 'Axolotl'], ['capybara', 'Capybara'], ['beaver', 'Bubble beaver'], ['grape', 'Mesh grape ball'], ['crackball', 'Cracking ball'], ['slime', 'Slime']], icon: Icons },
@@ -2924,6 +2982,7 @@ function makeSquish() {
     entrance(o) {
       if (o.plinth !== undefined && stageParts.plinth) { stageParts.plinth.position.y = -0.15 + o.plinth; stageParts.lip.position.y = o.plinth; }
       if (o.toy !== undefined && root) root.position.y = o.toy;
+      if (o.hide !== undefined && root) root.visible = !o.hide;  // out of sight until it drops (the far camera would see it waiting above)
       if (o.land && sim) { for (let i = 0; i < sim.n; i++) sim.V[i * 3 + 1] -= o.land; pressSound(0.55); }
     },
     debugShell: () => location.search.includes('debug') ? { shell, sim, crackPress, imps } : null,  // test hook, only with ?debug
@@ -3307,17 +3366,30 @@ try { await renderer.compileAsync(scene, camera); } catch (e) {}  // in parallel
 booted(0.92, 'Drawing the first frame');
 const stageEl = $('#stage'), easeIO = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 let entering = !!intro, landed = false;
+let camFrom = null;
+function farCamera() {  // the camera's start: well back and round to the right, shifted so the plinth's centre sits on the landing point
+  const h = orbit.home; camFrom = { th: h.th + 0.85, r: h.r * 2.3, ox: 0, oy: 0 };
+  orbit.goal.th = orbit.cur.th = camFrom.th; orbit.goal.r = orbit.cur.r = camFrom.r; orbit.goal.ph = orbit.cur.ph = h.ph; updateCamera(0);
+  camera.clearViewOffset(); camera.updateMatrixWorld(); const r = canvas.getBoundingClientRect(), v = new THREE.Vector3(0, 0, 0).project(camera);
+  camFrom.ox = (v.x + 1) / 2 * r.width - (intro.land.x - r.left); camFrom.oy = (1 - v.y) / 2 * r.height - (intro.land.y - r.top);
+  camera.setViewOffset(r.width, r.height, camFrom.ox, camFrom.oy, r.width, r.height); camera.updateMatrixWorld();
+}
 function entrance(now) {
   if (!entering || !intro.started) return;
   const t = intro.t0 ? (now - intro.t0) / 1000 : 99;  // reduced motion: straight to the end
-  const g = easeIO(clamp((t - 1.05) / 0.85)); stageEl.style.setProperty('--gr', (g * Math.hypot(innerWidth, innerHeight) * 0.75 + 160 * g) + 'px');
-  const f = clamp((t - 1.95) / 0.48);  // the toy falls once the spill has become the plinth
-  if (cur.entrance) cur.entrance({ plinth: 0, toy: 4.4 * (1 - f * f) });  // the drop accelerates like a fall
+  if (camFrom) {  // 2.0 to 3.3 s: the swing left and in, the offset easing to none
+    const k = easeIO(clamp((t - 2.0) / 1.3)), h = orbit.home, r = canvas.getBoundingClientRect();
+    orbit.goal.th = orbit.cur.th = lerp(camFrom.th, h.th, k); orbit.goal.r = orbit.cur.r = lerp(camFrom.r, h.r, k);
+    if (k < 1) camera.setViewOffset(r.width, r.height, camFrom.ox * (1 - k), camFrom.oy * (1 - k), r.width, r.height); else { camera.clearViewOffset(); camFrom = null; }
+  }
+  const g = easeIO(clamp((t - 2.0) / 1.0)); stageEl.style.setProperty('--gr', (g * Math.hypot(innerWidth, innerHeight) * 0.75 + 160 * g) + 'px');
+  const f = clamp((t - 3.2) / 0.48);  // the toy falls once the camera has arrived
+  if (cur.entrance) cur.entrance({ plinth: 0, toy: 4.4 * (1 - f * f), hide: t < 3.2 });  // the drop accelerates like a fall
   if (f >= 1 && !landed) { landed = true; if (cur.entrance) cur.entrance({ land: intro.t0 ? 3.2 : 0 }); }
-  if (t > 3.4) { entering = false; document.documentElement.classList.remove('lab-enter'); stageEl.style.removeProperty('--gr'); }
+  if (t > 4.4) { entering = false; document.documentElement.classList.remove('lab-enter'); stageEl.style.removeProperty('--gr'); }
 }
 if (intro) {
-  intro.onStart = () => Sound.ensure();
+  intro.onStart = () => { Sound.ensure(); if (intro.t0 !== 0) farCamera(); };
   // where the plinth top sits on screen (its rim projected), for the landing's spill to settle onto
   intro.plinth = () => { const r = canvas.getBoundingClientRect(), v = new THREE.Vector3(); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
     for (let i = 0; i < 64; i++) { const a = i / 64 * TAU; v.set(Math.cos(a) * 2.06, 0, Math.sin(a) * 2.06).project(camera); const x = r.left + (v.x + 1) / 2 * r.width, y = r.top + (1 - v.y) / 2 * r.height; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
