@@ -773,21 +773,19 @@ don't change. Everything the visitor sees says **squish.labs**.
 >    finishes, and accept a `squish:start` message.
 > 4. Update material-studies/HANDOFF-PORTFOLIO.md with the final live URL and anything that changed.
 
---- posted ---
-
 **Round L5: squish.labs button on ritwicdesign.com (run in your PORTFOLIO project, not here)**
 Open Claude Code in your **Portfolio** project folder and paste:
 > Read this handoff document first:
-> https://github.com/ritwic13-droid/lab/blob/claude/determined-mccarthy-bktqmd/material-studies/HANDOFF-PORTFOLIO.md
+> https://github.com/ritwic13-droid/squish-labs/blob/main/material-studies/HANDOFF-PORTFOLIO.md
 > Then add the squish.labs button and transition it describes to my portfolio. Look at this project's
 > existing code first, reuse its styles and the opal CTA's exact colours, and tell me before changing
 > anything outside the top toolbar.
 > provide me the link attached to my portfolio as well as the standalone
 > prepare a brief about this project similar to other prototypes I have made before and make a similar page about this project with similar CTA format providing justified information about the time and effort it took to create this project. the theme for the squish labs project should be aligned with the project's theme but also sit in alignment with the portfolio's theme
 > I don't know what the right place for squish.labs button is on my portfolio, I would assume top nav but I dont want it to get too crowded plus we'll have to sacrifice buttons for the mobile version anyways. find a solution for this problem as I have increased items in the top nav that are all kind of necessary. for the squish.labs buttons all I know is that I want the fluidic button to take user directly to squish.labs deployed website and the brief about squish.labs with its own CTA to take to squish.labs is available as part of the prototypes portion of my portfolio home page. The brief should sit on the left of knight of the realm, the first prototype to be seen by the user. the home page thumbnail for this brief should be the interactive blob that is part of the starting animation on the squish.labs home page
-> through the vercel deployment for an analytics page for squish.labs where I want to see what users interact with, how they interact with them, how often they interact with them, what toggles they prefer, what is theyre time spent, what else can I learn from this project about user analytics, user experience. this page should not be accessible in any way through my portfolio or squish.labs, i only want to access it for myself and I should be the only person to be able to access it, give me the link for that and then i will save it in my bookmarks.
+> through the vercel deployment for an analytics page for squish.labs where I want to see what users interact with, how they interact with them, how often they interact with them, what toggles they prefer, what is theyre time spent, what data I can extract from visitors without their permission and without any repurcussions to sell without permission, and where to sell it? what else can I learn from this project about user analytics, user experience. this page should not be accessible in any way through my portfolio or squish.labs, i only want to access it for myself and I should be the only person to be able to access it, give me the link for that and then i will save it in my bookmarks.
 
----
+--- posted ---
 
 ## Verification (after L5; run in THIS lab project)
 

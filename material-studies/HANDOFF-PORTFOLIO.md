@@ -1,7 +1,7 @@
 # Handoff: add squish.labs to ritwicdesign.com
 
 **For:** Claude Code working in the Portfolio project (ritwicdesign.com).
-**From:** the squish.labs lab project, repo `ritwic13-droid/lab`, branch `claude/determined-mccarthy-bktqmd`,
+**From:** the squish.labs lab project, repo `ritwic13-droid/squish.labs` (private; public copy: `ritwic13-droid/squish-labs`), branch `claude/determined-mccarthy-bktqmd`,
 entry file `material-studies/index.html` (internal codename "Material Studies"; the visitor-facing
 name is **squish.labs**, lowercase, with "labs" in the brand pink).
 
